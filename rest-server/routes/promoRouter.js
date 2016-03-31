@@ -1,37 +1,60 @@
+var express = require('express');
+var bodyParser = require('body-parser');
+var mongoose = require('mongoose');
 
+var Promotions = require('../models/promotions');
 var promoRouter = require('express').Router();
 
-promoRouter.use(require('body-parser').json());
+promoRouter.use(bodyParser.json());
 
 promoRouter.route('/')
-.all(function(req, res, next) {
-	res.writeHead(200, { 'Content-Type': 'text/plain' });
-	next();
-})
 .get(function(req, res, next) {
-	res.end('Will send all the promotions to you!');
+	Promotions.find({}, function(err, promo) {
+	if (err) throw err;
+	res.json(promo);
+	});
 })
 .post(function(req, res, next) {
-	res.end('Will add the promotion: ' + req.body.name + ' with details: ' + req.body.description);
+	Promotions.create(req.body, function(err, promo) {
+		if (err) throw err;
+		console.log('Promo created!');
+		var id = promo._id;
+
+		res.writeHead(200, {
+			'Content-Type': 'text/plain'
+		});
+		res.end('Added the promo with id: ' + id);
+	});
 })
 .delete(function(req, res, next) {
-	res.end('Deleting all promotions');
+	Promotions.remove({}, function(err, resp) {
+		if (err) throw err;
+		res.json(resp);
+	});
 });
 
 promoRouter.route('/:promoId')
-.all(function(req, res, next) {
-	res.writeHead(200, { 'Content-Type': 'text/plain' });
-	next();
-})
 .get(function(req, res, next) {
-	res.end('Getting the promotion: ' + req.params.promoId + '\n');
+	Promotions.findById(req.params.promoId, function(err, promo) {
+		if (err) throw err;
+		res.json(promo);
+	});
 })
 .put(function(req, res, next) {
-	res.write('Updating the promotion: ' + req.params.promoId + '\n');
-	res.end('Will update the promotion: '  + req.body.name + ' with details: ' + req.body.description);
+	Promotions.findByIdAndUpdate(req.params.promoId, {
+		$set: req.body
+	}, {
+		new: true
+	}, function(err, promo) {
+		if (err) throw err;
+		res.json(promo);
+	});
 })
 .delete(function(req, res, next) {
-	res.end('Deleting promotion: ' + req.params.promoId);
+	Promotions.findByIdAndRemove(req.params.promoId, function(err, resp) {
+		if (err) throw err;
+		res.json(resp);
+	});
 });
 
 module.exports = promoRouter;
