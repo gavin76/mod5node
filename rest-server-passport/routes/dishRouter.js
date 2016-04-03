@@ -30,7 +30,10 @@ dishRouter.route('/')
 .delete(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next) {
 	Dishes.remove({}, function(err, resp) {
 		if (err) throw err;
-		res.json(resp);
+		res.writeHead(200,  {
+			'Content-Type': 'text/plain'
+		});
+		res.end('All dishes deleted.');
 	});
 });
 
@@ -48,13 +51,18 @@ dishRouter.route('/:dishId')
 		new: true
 	}, function(err, dish) {
 		if (err) throw err;
+		console.log('Updated dish!');
 		res.json(dish);
 	});
 })
 .delete(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next) {
 	Dishes.findByIdAndRemove(req.params.dishId, function(err, resp) {
 		if (err) throw err;
-		res.json(resp);
+
+		res.writeHead(200,  {
+			'Content-Type': 'text/plain'
+		});
+		res.end('Dish deleted.');
 	});
 });
 
