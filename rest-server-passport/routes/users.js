@@ -10,7 +10,7 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/register', function(req, res) {
-  User.register(newUser({ username: req.body.username }),
+  User.register(new User({ username: req.body.username }),
     req.body.password, function(err, user) {
       if (err) {
         return res.status(500).json({err: err});

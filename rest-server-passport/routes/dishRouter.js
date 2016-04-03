@@ -3,6 +3,7 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
 var Dishes = require('../models/dishes');
+var Verify = require('./verify');
 
 var dishRouter = express.Router();
 dishRouter.use(bodyParser.json());

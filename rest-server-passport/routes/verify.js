@@ -11,10 +11,11 @@ exports.getToken = function(user) {
 exports.verifyOrdinaryUser = function(req, res, next) {
   // check header or url parameters or post parameters for token
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
-
+  console.log('Verifying token...');
   // decode token
   if (token) {
     // verifies secret and checks exp
+    console.log('Token provided.');
     jwt.verify(token, config.secretKey, function(err, decoded) {
       if (err) {
         var err = new Error('You are not authenticated!');
@@ -28,6 +29,7 @@ exports.verifyOrdinaryUser = function(req, res, next) {
     });
   } else {
     // if no token, return an error
+    console.log('No token found?');
     var err = new Error('No token provided!');
     err.status = 403;
     return next(err);
