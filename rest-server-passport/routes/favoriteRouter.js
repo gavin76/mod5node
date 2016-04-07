@@ -2,25 +2,25 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
-var Dishes = require('../models/dishes');
+var Favorites = require('../models/favorites');
 var Verify = require('./verify');
 
-var dishRouter = express.Router();
-dishRouter.use(bodyParser.json());
+var favoriteRouter = express.Router();
+favoriteRouter.use(bodyParser.json());
 
-dishRouter.route('/')
+favoriteRouter.route('/')
 .get(Verify.verifyOrdinaryUser, function(req, res, next) {
-	Dishes.find({})
-	    .populate('comments.postedBy')
-	    .exec(function(err, dish) {
+	Favorites.find({})
+	    .populate('dishes.dish')
+	    .exec(function(err, favorite) {
 			if (err) throw err;
-			res.json(dish);
+			res.json(favorite);
 	});	
 })
 .post(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next) {
-	Dishes.create(req.body, function(err, dish) {
+	Favorites.create(req.body, function(err, favorite) {
 		if (err) throw err;
-		console.log('Dish created!');
+		console.log('Favorite created!');
 		var id = dish._id;
 
 		res.writeHead(200,  {
