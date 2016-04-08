@@ -9,15 +9,40 @@ var favoriteRouter = express.Router();
 favoriteRouter.use(bodyParser.json());
 
 favoriteRouter.route('/')
-.get(Verify.verifyOrdinaryUser, function(req, res, next) {
-	Favorites.find({})
-	    .populate('dishes.dish')
+.all(Verify.verifyOrdinaryUser)
+
+
+.get(function(req, res, next) {
+	Favorites.findById(req.decoded._doc._id)
+	    .populate('dishes.favDish')
 	    .exec(function(err, favorite) {
 			if (err) throw err;
 			res.json(favorite);
 	});	
 })
-.post(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next) {
+.post(function(req, res, next) {
+	console.log('Request posted by: ' + req.decoded._doc._id);
+	console.log('Received dish id: ' + req.body._id + ' for addition to favorites');
+	Favorites.findOneAndUpdate({postedBy: req.decoded._doc._id}, {$addToSet: {dishes: req.body._id}}, function(err, resp) {
+		if (err) throw err;
+		if (resp === null) {
+			console.log("No favorites existing. Create...");
+			Favorites.create({
+				postedBy: req.decoded._doc._id,
+				dishes: [req.body._id]
+				}, function(err, favDish) {
+					if (err) throw err;
+					console.log('Favorite dish added!');
+					res.json(favDish);
+			});
+		} else {
+			console.log('Updated favorite dish list.');
+			res.json(resp);
+		}
+	});
+	
+	
+	/*
 	Favorites.create(req.body, function(err, favorite) {
 		if (err) throw err;
 		console.log('Favorite created!');
@@ -26,25 +51,28 @@ favoriteRouter.route('/')
 		res.writeHead(200,  {
 			'Content-Type': 'text/plain'
 		});
-		res.end('Added the dish with id: ' + id);
+		res.end('Added the Favorites with id: ' + id);
 	});
+	*/
 })
 .delete(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next) {
-	Dishes.remove({}, function(err, resp) {
+	Favorites.remove({}, function(err, resp) {
 		if (err) throw err;
 		res.json(resp);
+		
 		/*
 		res.writeHead(200,  {
 			'Content-Type': 'text/plain'
 		});
-		res.end('All dishes deleted.');
+		res.end('All favorites deleted.');
 		*/
 	});
 });
 
-dishRouter.route('/:dishId')
+/*
+favoriteRouter.route('/:favoriteId')
 .get(Verify.verifyOrdinaryUser, function(req, res, next) {
-	Dishes.findById(req.params.dishId)
+	Favorites.findById(req.params.dishId)
 		.populate('comments.postedBy')
 		.exec(function(err, dish) {
 			if (err) throw err;
@@ -52,7 +80,7 @@ dishRouter.route('/:dishId')
 	});
 })
 .put(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next) {
-	Dishes.findByIdAndUpdate(req.params.dishId, {
+	Favorites.findByIdAndUpdate(req.params.dishId, {
 		$set: req.body
 	}, {
 		new: true
@@ -63,7 +91,7 @@ dishRouter.route('/:dishId')
 	});
 })
 .delete(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next) {
-	Dishes.findByIdAndRemove(req.params.dishId, function(err, resp) {
+	Favorites.findByIdAndRemove(req.params.dishId, function(err, resp) {
 		if (err) throw err;
 
 		res.writeHead(200,  {
@@ -73,11 +101,11 @@ dishRouter.route('/:dishId')
 	});
 });
 
-dishRouter.route('/:dishId/comments')
+favoriteRouter.route('/:dishId/comments')
 .all(Verify.verifyOrdinaryUser)
 
 .get(function(req, res, next) {
-	Dishes.findById(req.params.dishId)
+	Favorites.findById(req.params.dishId)
 		.populate('comments.postedBy')
 		.exec(function(err, dish) {
 			if (err) throw err;
@@ -86,7 +114,7 @@ dishRouter.route('/:dishId/comments')
 })
 
 .post(function(req, res, next) {
-	Dishes.findById(req.params.dishId, function(err, dish) {
+	Favorites.findById(req.params.dishId, function(err, dish) {
 		if (err) throw err;
 		req.body.postedBy = req.decoded._doc._id;
 		dish.comments.push(req.body);
@@ -98,7 +126,7 @@ dishRouter.route('/:dishId/comments')
 	});
 })
 .delete(Verify.verifyAdmin, function(req, res, next) {
-	Dishes.findById(req.params.dishId, function(err, dish) {
+	Favorites.findById(req.params.dishId, function(err, dish) {
 		if (err) throw err;
 		for (var i = (dish.comments.length - 1); i >= 0; i --) {
 			dish.comments.id(dish.comments[i]._id).remove();
@@ -113,10 +141,10 @@ dishRouter.route('/:dishId/comments')
 	})
 });
 
-dishRouter.route('/:dishId/comments/:commentId')
+favoriteRouter.route('/:dishId/comments/:commentId')
 .all(Verify.verifyOrdinaryUser)
 .get(function(req, res, next) {
-	Dishes.findById(req.params.dishId)
+	Favorites.findById(req.params.dishId)
 		.populate('comments.postedBy')
 		.exec(function(err, dish) {
 			if (err) throw err;
@@ -126,7 +154,7 @@ dishRouter.route('/:dishId/comments/:commentId')
 
 .put(function(req, res, next) {
 	// Delete existing comment and insert the updated comment as new comment
-	Dishes.findById(req.params.dishId, function(err, dish) {
+	Favorites.findById(req.params.dishId, function(err, dish) {
 		if (err) throw err;
 		dish.comments.id(req.params.commentId).remove();
 		req.body.postedBy = req.decoded._doc._id;
@@ -140,7 +168,7 @@ dishRouter.route('/:dishId/comments/:commentId')
 	});
 })
 .delete(function(req, res, next) {
-	Dishes.findById(req.params.dishId, function(err, dish) {
+	Favorites.findById(req.params.dishId, function(err, dish) {
 		if (dish.comments.id(req.params.commentId).postedBy != req.decoded._doc._id) {
 			var err = new Error('You are not authorized to perform this operation!');
 			err.status = 403;
@@ -154,4 +182,5 @@ dishRouter.route('/:dishId/comments/:commentId')
 	});
 });
 
-module.exports = dishRouter;
+*/
+module.exports = favoriteRouter;
