@@ -7,13 +7,14 @@ var favoriteSchema = new Schema({
       ref: 'User'
     },
     dishes: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Dish'
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Dish'
+	}]
 }, {
 	timestamps: true
 });
 
-/ create a model using the schema
+// create a model using the schema
 var Favorites = mongoose.model('Favorite', favoriteSchema);
 
 // make this available to our Node applications
